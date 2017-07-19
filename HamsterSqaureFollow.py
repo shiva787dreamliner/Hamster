@@ -102,7 +102,7 @@ class GUI(object):
 	def __init__(self, root, robot_control):
 		self.root = root
 		self.robot_control = robot_control
-		root.geometry('250x30')
+		root.geometry('250x70')
 		root.title('Hamster Control')
 
 		b3 = tk.Button(root, text='Square')
