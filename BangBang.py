@@ -46,16 +46,16 @@ class RobotBehaviorThread(threading.Thread):
 
 				print "floor l/r", floorL, floorR
 
-				if (floorL > 30 and floorR > 30):
+				if (floorL > 40 and floorR > 40):
 					robot.set_wheel(0, 30)
 					robot.set_wheel(1, 30)
 
-				elif (floorL < 30 and floorL < floorR):
-					robot.set_wheel(1, 50)
+				elif (floorL < 40 and floorL < floorR):
+					robot.set_wheel(1, 40)
 					robot.set_wheel(0, 15)
 
-				elif (floorR > 30 and floorR < floorL):
-					robot.set_wheel(0, 50)
+				elif (floorR < 40 and floorR < floorL):
+					robot.set_wheel(0, 40)
 					robot.set_wheel(1, 15)
 
 					
