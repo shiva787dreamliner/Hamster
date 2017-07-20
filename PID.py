@@ -32,26 +32,40 @@ class RobotBehaviorThread(threading.Thread):
 		self.done = False
 		self.lineFollow = False
 		self.pause = False
-		return
+		self.errorIntegral = []
 
-	
+
+	def derivativeControl(self, robot):
+		currentError = robot.get_floor(0) - robot.get_floor(1)
+		pastError  = self.errorIntegral[-1]
+		#TO DO: add the change in time 
+		derivError = (currentError - pastError) / (time.time())
+		dConstant = 10
+		return derivError *  dConstant
+
 	def integralControl(self, robot):
-		errorIntegral = []
-		errorIntegral.add(robot.get_floor(0) - robot.get_floor(1))
+		self.errorIntegral.append(robot.get_floor(0) - robot.get_floor(1))
+		sumError = 0
+
+		iConstant = 0.00003
+		#TO DO: Add the change in time
+		for each in self.errorIntegral:
+			sumError += each * time.time()
+
+		print "integral errot with constant", sumError * iConstant 
+		return sumError * iConstant
+
 
 	def proportion(self, robot):
 		floorL = robot.get_floor(0)
 		floorR = robot.get_floor(1)
 
-		pConstant = 0.5
+		pConstant = 1
 
-		error = floorL - floorR
+		currentError = floorL - floorR
 
 		print "floor l/r", floorL, floorR
-		print "error", error
-
-		robot.set_wheel(0, int(pConstant * (floorL + error)))
-		robot.set_wheel(1, int(pConstant * (floorR - error)))
+		print "proportional error", currentError
 
 		'''leftError = 100 - floorL
 		rightError = 100 - floorR
@@ -62,6 +76,7 @@ class RobotBehaviorThread(threading.Thread):
 		else:
 			robot.set_wheel(1, int(leftError * 2))
 			robot.set_wheel(0, int(rightError* 2))'''
+		return currentError * pConstant
 
 	def run(self):
 		print "in run"
@@ -82,8 +97,16 @@ class RobotBehaviorThread(threading.Thread):
 				leftError = 100 - floorL
 				rightError = 100 - floorR'''
 
-				self.proportion(robot)
-				#self.integralControl(robot)
+				print robot.get_battery()
+
+				totalErrorPID = self.proportion(robot) + self.integralControl(robot) + self.derivativeControl(robot)
+
+				#USE THIS ONE
+				robot.set_wheel(0, int(robot.get_floor(0) + totalErrorPID))
+				robot.set_wheel(1, int(robot.get_floor(1) - totalErrorPID))
+
+				'''robot.set_wheel(0, int(pConstant * (floorL + error)))
+				robot.set_wheel(1, int(pConstant * (floorR - error)))'''
 
 
 				'''if (floorL == floorR):
