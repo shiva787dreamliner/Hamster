@@ -34,13 +34,26 @@ class RobotBehaviorThread(threading.Thread):
 		self.pause = False
 		return
 
+	
+	def integralControl(self, robot):
+		errorIntegral = []
+		errorIntegral.add(robot.get_floor(0) - robot.get_floor(1))
+
 	def proportion(self, robot):
 		floorL = robot.get_floor(0)
 		floorR = robot.get_floor(1)
 
-		print "floor l/r", floorL, floorR
+		pConstant = 0.5
 
-		leftError = 100 - floorL
+		error = floorL - floorR
+
+		print "floor l/r", floorL, floorR
+		print "error", error
+
+		robot.set_wheel(0, int(pConstant * (floorL + error)))
+		robot.set_wheel(1, int(pConstant * (floorR - error)))
+
+		'''leftError = 100 - floorL
 		rightError = 100 - floorR
 
 		if (leftError <= 5 and rightError <= 5):
@@ -48,7 +61,7 @@ class RobotBehaviorThread(threading.Thread):
 			robot.set_wheel(0, 20)
 		else:
 			robot.set_wheel(1, int(leftError * 2))
-			robot.set_wheel(0, int(rightError* 2))
+			robot.set_wheel(0, int(rightError* 2))'''
 
 	def run(self):
 		print "in run"
@@ -70,9 +83,7 @@ class RobotBehaviorThread(threading.Thread):
 				rightError = 100 - floorR'''
 
 				self.proportion(robot)
-
-				'''errorPID = []
-				errorPID.add(floorR - floorL)'''
+				#self.integralControl(robot)
 
 
 				'''if (floorL == floorR):
