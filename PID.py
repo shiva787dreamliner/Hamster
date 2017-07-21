@@ -39,7 +39,7 @@ class RobotBehaviorThread(threading.Thread):
 		currentError = robot.get_floor(0) - robot.get_floor(1)
 		pastError  = self.errorIntegral[-1]
 		#TO DO: add the change in time 
-		derivError = (currentError - pastError) / (time.time())
+		derivError = (currentError - pastError)
 		dConstant = 10
 		return derivError *  dConstant
 
@@ -50,8 +50,9 @@ class RobotBehaviorThread(threading.Thread):
 		iConstant = 0.00003
 		#TO DO: Add the change in time
 		for each in self.errorIntegral:
-			sumError += each * time.time()
+			sumError += each
 
+		sumError = sumError/len(self.errorIntegral)
 		print "integral errot with constant", sumError * iConstant 
 		return sumError * iConstant
 
@@ -175,7 +176,6 @@ class GUI(object):
 	def pause(self, event=None):
 		self.robot_control.pause = True
 		return
-
 
 
 #################################
