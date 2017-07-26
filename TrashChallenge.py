@@ -7,13 +7,10 @@ from HamsterAPI.comm_ble import RobotComm
 
 gRobotList = []
 gQuit = False
-#flag it as global here?
-gstateQue = Queue.Queue()
 class Event(object):
 	def __init__(self, eventType, eventData):
 		self.eventType = eventType
 		self.eventData = eventData	
-		
 '''class stateQ(object):
 	def __init__(self):
 		self.stateQ = Queue.Queue()
@@ -23,6 +20,7 @@ class Event(object):
 
 	def removeFirstFromQueue():
 		self.stateQ.get()'''
+
 
 class finiteStateMachine(threading.Thread):
 	def __init__(self, stateQ):
@@ -36,13 +34,15 @@ class finiteStateMachine(threading.Thread):
 	
 	def run(self):
 		while(True):
-			print "in thread fsm"
 			if not self.stateQ.empty():
+				print "length of event queue: ", self.stateQ.qsize()
 				event = self.stateQ.get()
 				for state in self.stateList:
 					if state[0] == self.currentState and state[1] == event.eventType:
-						state[2]
+						print "previous state", state[0]
+						state[2]()
 						self.currentState = state[3]
+						print "new state", state[3]
 						break
 
 class checkInput(threading.Thread):
@@ -51,82 +51,103 @@ class checkInput(threading.Thread):
 		self.stateQ = stateQ
 	def run(self):
 		while (True):
-			#print "qsize", gstateQue.qsize()
 			for robot in gRobotList:
 				proxL = robot.get_proximity(0)
 				proxR = robot.get_proximity(1)
 
-				if (robot.get_floor(1) < 10 or robot.get_floor(0) < 10):
+				if (robot.get_floor(1) < 20 or robot.get_floor(0) < 20):
 					boundryEvent = Event("boundryLine", [proxL, proxR])
 					self.stateQ.put(boundryEvent)
-					#print "qsize", gstateQue.qsize()
+					print "qsize in boundry", self.stateQ.qsize()
 				elif (proxR < 20 and proxL < 20):
 					clearEvent = Event("clear", [proxL, proxR])
 					self.stateQ.put(clearEvent)
-					#print "qsize", gstateQue.qsize()
-				elif (proxR > proxL):
+					print "qsize in clear", self.stateQ.qsize()
+				elif (proxR > 30):
 					rightObsEvent = Event("rightObstacle", [proxL, proxR])
 					self.stateQ.put(rightObsEvent)
-					#print "qsize", gstateQue.qsize()
-				elif (proxL > proxR):
+					print "qsize in rObs", self.stateQ.qsize()
+				elif (proxR - proxL < 20 and proxR > 40 and proxL > 40):
+					straObsEvent = Event("straightObstacle", [proxL, proxR])
+					self.stateQ.put(straObsEvent)
+				elif (proxL > 30):
 					leftObsEvent = Event("leftObstacle", [proxL, proxR])
 					self.stateQ.put(leftObsEvent)
-					#print "qsize", gstateQue.qsize()
+					print "qsize in leftObs", self.stateQ.qsize()
+			time.sleep(0.1)
 
 class HamsterBehvaior(object):
 	def __init__(self, stateMachine):
 		self.stateMachine = stateMachine
 		print "in init"
-		for robot in gRobotList:
-			self.robot = robot
-			print "robot initialized"
-		print "after init"
 
 		self.stateMachine.addState("movingForward", "rightObstacle", self.turnRight, "DetectingObject")
 		self.stateMachine.addState("movingForward", "leftObstacle", self.turnLeft, "DetectingObject")
+		self.stateMachine.addState("movingForward", "straightObstacle", self.moveForward, "DetectingObject")
 		self.stateMachine.addState("movingForward", "boundryLine", self.atBoundry, "movingForward")
 		self.stateMachine.addState("movingForward", "clear", self.moveForward, "movingForward")
 
-		self.stateMachine.addState("DetectingObject", "rightObstacle", self.moveForward, "PushingTrash")
-		self.stateMachine.addState("DetectingObject", "leftObstacle", self.moveForward, "PushingTrash")
+		self.stateMachine.addState("DetectingObject", "rightObstacle", self.turnRight, "DetectingObject")
+		self.stateMachine.addState("DetectingObject", "leftObstacle", self.turnLeft, "DetectingObject")
+		self.stateMachine.addState("DetectingObject", "straightObstacle", self.moveForward, "PushingTrash")
 		self.stateMachine.addState("DetectingObject", "boundryLine", self.atBoundry, "movingForward")
 		self.stateMachine.addState("DetectingObject", "clear", self.moveForward, "movingForward")
 
-		self.stateMachine.addState("PushingTrash", "rightObstacle", self.moveForward, "PushingTrash")
-		self.stateMachine.addState("PushingTrash", "leftObstacle", self.moveForward, "PushingTrash")
-		self.stateMachine.addState("PushingTrash", "boundryLine", self.depositTrash, "selfForward")
+		self.stateMachine.addState("PushingTrash", "rightObstacle", self.turnRight, "DetectingObject")
+		self.stateMachine.addState("PushingTrash", "leftObstacle", self.turnLeft, "DetectingObject")
+		self.stateMachine.addState("PushingTrash", "straightObstacle", self.moveForward, "PushingTrash")
+		self.stateMachine.addState("PushingTrash", "boundryLine", self.depositTrash, "movingForward")
 		self.stateMachine.addState("PushingTrash", "clear", self.moveForward, "movingForward")
 
 
 
-	def moveForward():
-		self.robot.set_wheel(0, 50)
-		self.robot.set_wheel(1, 50)
+	def moveForward(self):
+		for robot in gRobotList:
+			robot.set_wheel(0, 50)
+			robot.set_wheel(1, 50)
+			print "MOVING FORWARD"
 
-	def turnRight():
-		self.robot.set_wheel(0, 100) #have to put actual readings from proximity sensors
-		self.robot.set_wheel(1, 0)
+	def turnRight(self):
+		for robot in gRobotList:
+			robot.set_led(1, 3)
+			robot.set_led(0, 3)
+			robot.set_wheel(0, 2*robot.get_proximity(1)) #have to put actual readings from proximity sensors
+			robot.set_wheel(1, robot.get_proximity(0))
+			print "TURNING RIGHT"
 
-	def turnLeft():
-		self.robot.set_wheel(1, 100) #have to put actual readings from proximity sensors
-		self.robot.set_wheel(0, 0)
+	def turnLeft(self):
+		for robot in gRobotList:
+			robot.set_led(1, 1)
+			robot.set_led(0, 1)
+			robot.set_wheel(1, 2*robot.get_proximity(0)) #have to put actual readings from proximity sensors
+			robot.set_wheel(0, robot.get_proximity(1))
+			print "TURNING LEFT"
 
-	def atBoundry():
-		self.robot.set_wheel(1, 100) #have to put actual readings from proximity sensors
-		self.robot.set_wheel(0, 0)
+	def atBoundry(self):
+		for robot in gRobotList:
+			robot.set_wheel(1, 100) #have to put actual readings from proximity sensors
+			robot.set_wheel(0, -100)
+			print "IN AT BOUNDRY"
 
-	def depositTrash():
-		self.robot.set_wheel(1, 50) #have to put actual readings from proximity sensors
-		self.robot.set_wheel(0, 50)
-		time.sleep(0.1)
-		self.robot.set_wheel(1, 0)
-		self.robot.set_wheel(0, 100)
+	def depositTrash(self):
+		for robot in gRobotList:
+			robot.set_wheel(1, 50) #have to put actual readings from proximity sensors
+			robot.set_wheel(0, 50)
+			robot.set_musical_note(40)
+			robot.set_led(1, 2)
+			robot.set_led(0, 2)
+			time.sleep(1)
+			robot.set_musical_note(0)
+			robot.set_wheel(1, 0)
+			robot.set_wheel(0, 100)
+			print "DEPOSITING TRASH"
 
 
 
 def main(): 
 	robotComm = RobotComm(1)
 	commCheck = False
+	commEst = False
 
 	stateQ = Queue.Queue()
 
@@ -135,13 +156,13 @@ def main():
 	print "Bluetooth connected"
 	gRobotList = robotComm.robotList
 
+
 	frame = tk.Tk()
 
-	print "state machine created"
 	stateMachine = finiteStateMachine(stateQ)
 	stateMachine.daemon = True
 		
-	print "creating behavior"
+	# print "creating behavior"
 	behavior = HamsterBehvaior(stateMachine)
 	stateMachine.start()
 
