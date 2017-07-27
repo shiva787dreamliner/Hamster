@@ -46,7 +46,7 @@ import time
 
 import threading
 
-import Tkinter as tk
+import Tkinter as tk3
 
 import Queue
 import pdb

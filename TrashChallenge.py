@@ -1,3 +1,13 @@
+# *****************************************************************************************
+
+# TO DO:
+
+# - get edge detection and finshed removing Trash
+# - fix states problem for edge case
+
+# *****************************************************************************************
+
+
 import sys
 import time
 import threading
@@ -34,16 +44,17 @@ class finiteStateMachine(threading.Thread):
 	
 	def run(self):
 		while(True):
-			if not self.stateQ.empty():
-				print "length of event queue: ", self.stateQ.qsize()
-				event = self.stateQ.get()
-				for state in self.stateList:
-					if state[0] == self.currentState and state[1] == event.eventType:
-						print "previous state", state[0]
-						state[2]()
-						self.currentState = state[3]
-						print "new state", state[3]
-						break
+			#if not self.stateQ.empty():
+			#print "length of event queue: ", self.stateQ.qsize()
+			event = self.stateQ.get()
+			print event, self.currentState
+			for state in self.stateList:
+				if state[0] == self.currentState and state[1] == event.eventType:
+					#print "previous state", state[0]
+					state[2]()
+					self.currentState = state[3]
+					#print "new state", state[3]
+					break
 
 class checkInput(threading.Thread):
 	def __init__(self, stateQ):
@@ -55,31 +66,39 @@ class checkInput(threading.Thread):
 				proxL = robot.get_proximity(0)
 				proxR = robot.get_proximity(1)
 
-				if (robot.get_floor(1) < 20 or robot.get_floor(0) < 20):
+				if (robot.get_floor(1) < 50 or robot.get_floor(0) < 50):
 					boundryEvent = Event("boundryLine", [proxL, proxR])
-					self.stateQ.put(boundryEvent)
-					print "qsize in boundry", self.stateQ.qsize()
+					# print 'line detected'
+					if (robot.get_proximity(1) > 40 and robot.get_proximity(0)) > 40:
+					 	print "in corner case"
+						depEvent = Event("depositedTrash", [proxL, proxR])
+						self.stateQ.put(depEvent)
+						print "fininshed putting corner case in q"
+					else:
+					# # for i in range (2):
+						self.stateQ.put(boundryEvent)
+					#print "qsize in boundry", self.stateQ.qsize()
 				elif (proxR < 20 and proxL < 20):
 					clearEvent = Event("clear", [proxL, proxR])
 					self.stateQ.put(clearEvent)
-					print "qsize in clear", self.stateQ.qsize()
+					#print "qsize in clear", self.stateQ.qsize()
 				elif (proxR > 30):
 					rightObsEvent = Event("rightObstacle", [proxL, proxR])
 					self.stateQ.put(rightObsEvent)
-					print "qsize in rObs", self.stateQ.qsize()
+					#print "qsize in rObs", self.stateQ.qsize()
 				elif (proxR - proxL < 20 and proxR > 40 and proxL > 40):
 					straObsEvent = Event("straightObstacle", [proxL, proxR])
 					self.stateQ.put(straObsEvent)
 				elif (proxL > 30):
 					leftObsEvent = Event("leftObstacle", [proxL, proxR])
 					self.stateQ.put(leftObsEvent)
-					print "qsize in leftObs", self.stateQ.qsize()
-			time.sleep(0.1)
+					#print "qsize in leftObs", self.stateQ.qsize()
+				time.sleep(0.01)
 
 class HamsterBehvaior(object):
 	def __init__(self, stateMachine):
 		self.stateMachine = stateMachine
-		print "in init"
+		#print "in init"
 
 		self.stateMachine.addState("movingForward", "rightObstacle", self.turnRight, "DetectingObject")
 		self.stateMachine.addState("movingForward", "leftObstacle", self.turnLeft, "DetectingObject")
@@ -96,40 +115,46 @@ class HamsterBehvaior(object):
 		self.stateMachine.addState("PushingTrash", "rightObstacle", self.turnRight, "DetectingObject")
 		self.stateMachine.addState("PushingTrash", "leftObstacle", self.turnLeft, "DetectingObject")
 		self.stateMachine.addState("PushingTrash", "straightObstacle", self.moveForward, "PushingTrash")
-		self.stateMachine.addState("PushingTrash", "boundryLine", self.depositTrash, "movingForward")
+		#self.stateMachine.addState("PushingTrash", "boundryLine", self.depositTrash, "movingForward")
+		self.stateMachine.addState("PushingTrash", "depositedTrash", self.depositTrash, "movingForward")
 		self.stateMachine.addState("PushingTrash", "clear", self.moveForward, "movingForward")
 
 
 
 	def moveForward(self):
 		for robot in gRobotList:
-			robot.set_wheel(0, 50)
-			robot.set_wheel(1, 50)
-			print "MOVING FORWARD"
+			robot.set_led(1, 1)
+			robot.set_led(0, 1)
+			robot.set_wheel(0, 100)
+			robot.set_wheel(1, 100)
+			#print "MOVING FORWARD"
 
 	def turnRight(self):
 		for robot in gRobotList:
-			robot.set_led(1, 3)
-			robot.set_led(0, 3)
-			robot.set_wheel(0, 2*robot.get_proximity(1)) #have to put actual readings from proximity sensors
-			robot.set_wheel(1, robot.get_proximity(0))
-			print "TURNING RIGHT"
+			robot.set_led(1, 4)
+			robot.set_led(0, 0)
+			robot.set_wheel(0, 4*robot.get_proximity(1)) #have to put actual readings from proximity sensors
+			robot.set_wheel(1, 2*robot.get_proximity(0))
+			#print "TURNING RIGHT"
 
 	def turnLeft(self):
 		for robot in gRobotList:
-			robot.set_led(1, 1)
-			robot.set_led(0, 1)
-			robot.set_wheel(1, 2*robot.get_proximity(0)) #have to put actual readings from proximity sensors
-			robot.set_wheel(0, robot.get_proximity(1))
-			print "TURNING LEFT"
+			robot.set_led(0, 4)
+			robot.set_led(1, 0)
+			robot.set_wheel(1, 4*robot.get_proximity(0)) #have to put actual readings from proximity sensors
+			robot.set_wheel(0, 2*robot.get_proximity(1))
+			#print "TURNING LEFT"
 
 	def atBoundry(self):
+		print "IN AT BOUNDRY"
 		for robot in gRobotList:
-			robot.set_wheel(1, 100) #have to put actual readings from proximity sensors
-			robot.set_wheel(0, -100)
-			print "IN AT BOUNDRY"
+			robot.set_led(0, 3)
+			robot.set_led(1, 3)
+			robot.set_wheel(1, 50) 
+			robot.set_wheel(0, -50)
 
 	def depositTrash(self):
+		print "DEPOSITING TRASH"
 		for robot in gRobotList:
 			robot.set_wheel(1, 50) #have to put actual readings from proximity sensors
 			robot.set_wheel(0, 50)
@@ -140,7 +165,6 @@ class HamsterBehvaior(object):
 			robot.set_musical_note(0)
 			robot.set_wheel(1, 0)
 			robot.set_wheel(0, 100)
-			print "DEPOSITING TRASH"
 
 
 
@@ -162,11 +186,9 @@ def main():
 	stateMachine = finiteStateMachine(stateQ)
 	stateMachine.daemon = True
 		
-	# print "creating behavior"
+	# #print "creating behavior"
 	behavior = HamsterBehvaior(stateMachine)
 	stateMachine.start()
-
-
 
 	monitorInput = checkInput(stateQ)
 	monitorInput.daemon = True
@@ -175,7 +197,7 @@ def main():
 	frame.mainloop()
 
 	#robotComm.stop()
-	print "terimanted"
+	#print "terimanted"
 
 if __name__ == "__main__":
 	main()

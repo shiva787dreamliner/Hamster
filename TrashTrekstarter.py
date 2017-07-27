@@ -80,7 +80,7 @@ class RobotBehavior(object):
 		self.q = Queue.Queue()	# event queue for FSM
 		self.spawn_threads()
 		return
-
+      
 	def spawn_threads(self):
 		###########################################################
 		# 1. create a watcher thread that reads sensors and registers events: obstacle on left, right or no obstacle. This
@@ -100,7 +100,7 @@ class RobotBehavior(object):
 					just_turned_on = False #the first time the robot connect, sensor data is unavailable the first second or so
 				###########################################################
 				# Implement event producer here. The events are obstacle on left, right or no obstacle. Design your
-				# logic for what event gets created based on sensor readings.
+				# logic for what event gets cre3ated based on sensor readings.
 				###########################################################
 				time.sleep(0.01)
 			# else:
