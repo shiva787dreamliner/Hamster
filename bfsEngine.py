@@ -62,9 +62,9 @@ class BFS(object):
             (vertex, path) = stack.pop(0)   # FIFO
             #print 'after pop stack=', stack
             print '\nvisiting node', vertex, 'path=', path
-
             for next in self.graph[vertex] - set(path):
                 print 'next node', next
+
                 if next == goal:
                     return path + [next]     # returns a path and continues while loop 
                 else:
@@ -121,7 +121,7 @@ class BFS(object):
         return visited_order
 
 def main():
-    graph = {'A': set(['B', 'C']),
+    graph = {'A': set(['B', 'C']), #a dictionary
          'B': set(['A', 'E', 'D']),
          'C': set(['A', 'F', 'G']),
          'D': set(['B', 'H']),
