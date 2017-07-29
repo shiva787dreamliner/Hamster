@@ -32,15 +32,44 @@ class RobotBehaviorThread(threading.Thread):
 		self.done = False
 		self.lineFollow = False
 		self.pause = False
-		return
+		self.errorIntegral = []
+		self.userVal = 0
+		self.output = []
+
+
+	def derivativeControl(self, robot):
+		currentError = robot.get_floor(0) - robot.get_floor(1)
+		pastError  = self.errorIntegral[-1]
+		#TO DO: add the change in time 
+		derivError = (currentError - pastError)
+		dConstant = 100000
+		return derivError *  dConstant
+
+	def integralControl(self, robot):
+		self.errorIntegral.append(robot.get_floor(0) - robot.get_floor(1))
+		sumError = 0
+		iConstant = 0.0002
+		#TO DO: Add the change in time
+		for each in self.errorIntegral:
+			sumError += each
+
+		print "integral errot with constant", sumError * iConstant 
+		return sumError * iConstant
+
 
 	def proportion(self, robot):
 		floorL = robot.get_floor(0)
 		floorR = robot.get_floor(1)
 
-		print "floor l/r", floorL, floorR
+		pConstant = 2 + self.userVal
 
-		leftError = 100 - floorL
+		currentError = floorL - floorR
+
+		print "floor l/r", floorL, floorR
+		print "proportional error", currentError
+		print "userval", self.userVal
+
+		'''leftError = 100 - floorL
 		rightError = 100 - floorR
 
 		if (leftError <= 5 and rightError <= 5):
@@ -48,7 +77,8 @@ class RobotBehaviorThread(threading.Thread):
 			robot.set_wheel(0, 20)
 		else:
 			robot.set_wheel(1, int(leftError * 2))
-			robot.set_wheel(0, int(rightError* 2))
+			robot.set_wheel(0, int(rightError* 2))'''
+		return currentError * pConstant
 
 	def run(self):
 		print "in run"
@@ -69,10 +99,21 @@ class RobotBehaviorThread(threading.Thread):
 				leftError = 100 - floorL
 				rightError = 100 - floorR'''
 
-				self.proportion(robot)
+				print robot.get_battery()
 
-				'''errorPID = []
-				errorPID.add(floorR - floorL)'''
+
+				totalErrorPID = self.proportion(robot) + self.integralControl(robot) + self.derivativeControl(robot)
+				totalErrorPID = totalErrorPID * 2
+				#USE THIS ONE
+				#if (robot.get_floor(0) > robot.get_floor(1)):
+				robot.set_wheel(0, int(robot.get_floor(0) + totalErrorPID))
+				robot.set_wheel(1, int(robot.get_floor(1) - totalErrorPID))
+				'''if (robot.get_floor(1) > robot.get_floor(0)):
+					robot.set_wheel(0, int(robot.get_floor(0) - totalErrorPID))
+					robot.set_wheel(1, int(robot.get_floor(1) + totalErrorPID))'''
+
+				'''robot.set_wheel(0, int(pConstant * (floorL + error)))
+				robot.set_wheel(1, int(pConstant * (floorR - error)))'''
 
 
 				'''if (floorL == floorR):
@@ -125,6 +166,10 @@ class GUI(object):
 		b2.pack(side='left')
 		b2.bind('<Button-1>', self.stopProg)
 
+		self.root.bind("<KeyPress>", self.keyDown)
+		self.root.bind("<KeyRelease>", self.keyDown)
+
+
 		return
 
 	def lineFollow(self, event=None):
@@ -142,6 +187,11 @@ class GUI(object):
 		self.robot_control.pause = True
 		return
 
+	def keyDown(self, event = None):
+		self.robot_control.userVal += 0.1
+
+	def keyUp(self, event = None):
+		self.robot_control.userVal = self.robot_control.userVal
 
 
 #################################
