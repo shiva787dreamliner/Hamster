@@ -40,14 +40,10 @@ class SimpleGraphDisplay(object):
             if nodeKey[i] == ",":
                 index = i 
                 #print index
-        print nodeKey
-        print index
+
         x = int(nodeKey[:index]) + 1
         y = int(nodeKey[index+1:]) + 1
-
-        print x
-        print y
-
+        
         return x, y
 
     def display_graph(self):        
@@ -76,11 +72,10 @@ class SimpleGraphDisplay(object):
         return
 
     def highlight_path(self, path):
-        print path
+        print "this is the path", path
         pastNodeName = self.start_node
         for node_name in path:
             if node_name == self.goal_node:
-                print "in corner case"
                 for endNodeKey in self.graph:
                         if endNodeKey == pastNodeName:
                             pastNodeKey = endNodeKey
@@ -106,7 +101,6 @@ class SimpleGraphDisplay(object):
   
     def draw_node(self, nodeKey, n_color):
         #node is a dictionary of strings to sets
-        print "node", type(nodeKey)
         node_name = nodeKey
         
         x, y = self.convertToCoord(nodeKey)
