@@ -30,8 +30,37 @@ class SimpleGraphDisplay(object):
         self.graph = graph
         self.start_node = start_node
         self.goal_node = goal_node
+        self.canvas = tk.Canvas(self.gui_root, bg="white", width=300, height=300)
+        self.canvas.pack(expand=1, fill='both')
         self.display_graph()
         return
+
+    def updateGraph(self, newObs, removedObs):
+        #print "in update graph method"
+        removedNodes = []
+        for obs in newObs:
+            for nodeName in self.graph:
+                if nodeName == obs:
+                    removedNodes.append(nodeName)
+
+        for node in removedNodes:
+            self.graph.pop(node)
+
+        #print ('hello, from line 46')
+        for obstacle in newObs:
+            for node in self.graph:
+                ##print "in inner loop"
+                ##print graph[node]
+                for connections in self.graph[node]:
+                    if (obstacle == connections):
+                        #print "removing connections"
+                        self.graph[node].remove(connections)
+                        break
+        #print self.graph
+        self.canvas.delete("all")
+        self.display_graph()
+        return self.graph
+        
 
     def convertToCoord(self, nodeKey): 
 
@@ -39,7 +68,7 @@ class SimpleGraphDisplay(object):
         for i in range (len(nodeKey)):
             if nodeKey[i] == ",":
                 index = i 
-                #print index
+                ##print index
 
         x = int(nodeKey[:index]) + 1
         y = int(nodeKey[index+1:]) + 1
@@ -47,11 +76,10 @@ class SimpleGraphDisplay(object):
         return x, y
 
     def display_graph(self):        
-        self.canvas = tk.Canvas(self.gui_root, bg="white", width=300, height=300)
-        self.canvas.pack(expand=1, fill='both')
         #iterating through a dict essentially iterating through the jey
+        #print "this is the graph in display graph", self.graph
         for nodeKey in self.graph:
-            #print 'node in display graph', node, type(node)
+            ##print 'node in display graph', node, type(node)
             if nodeKey == self.start_node:
                 self.draw_node(nodeKey, 'red')
             elif nodeKey == self.goal_node:
@@ -72,8 +100,9 @@ class SimpleGraphDisplay(object):
         return
 
     def highlight_path(self, path):
-        print "this is the path", path
+        #print "this is the path", path
         pastNodeName = self.start_node
+        pastNodeKey = None
         for node_name in path:
             if node_name == self.goal_node:
                 for endNodeKey in self.graph:
@@ -85,7 +114,7 @@ class SimpleGraphDisplay(object):
             if (node_name != self.start_node) and (node_name != self.goal_node):          
                 for aNodeKey in self.graph:
                     if node_name == aNodeKey:
-                        #print 'node in highlight path', a_node
+                        ##print 'node in highlight path', a_node
                         self.draw_node(aNodeKey, 'orange')
                     currentNodeName = node_name
                     for pathNodeKey in self.graph:
@@ -93,6 +122,7 @@ class SimpleGraphDisplay(object):
                             currentNodeKey = pathNodeKey
                         if pathNodeKey == pastNodeName:
                             pastNodeKey = pathNodeKey
+                    #print pastNodeKey
                     self.draw_edge(pastNodeKey, currentNodeKey, 'orange')
                     pastNodeName = currentNodeName
 
@@ -104,6 +134,8 @@ class SimpleGraphDisplay(object):
         node_name = nodeKey
         
         x, y = self.convertToCoord(nodeKey)
+
+        #print "coordinates", x,y
     
         dist = self.node_dist
         size = self.node_size

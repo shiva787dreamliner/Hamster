@@ -51,25 +51,29 @@ class BFS(object):
         self.graph = graph
         return
 
+    def updateGraph(self, graph):
+        self.graph = graph
     ######################################################
     # this function returns the shortest path for given start and goal nodes
     ######################################################
     def bfs_shortest_path(self, start, goal):
         stack = [(start, [start])]
+        #print "bfs", start
+        #print "in bfsShortestPath", self.graph
 
         while stack:
-            #print 'before pop, stack=', stack
+            ##print 'before pop, stack=', stack
             (vertex, path) = stack.pop(0)   # FIFO
-            #print 'after pop stack=', stack
-            print '\nvisiting node', vertex, 'path=', path
+            ##print 'after pop stack=', stack
+            #print '\nvisiting node', vertex, 'path=', path
             for next in self.graph[vertex] - set(path):
-                print 'next node', next
+                #print 'next node', next
 
                 if next == goal:
                     return path + [next]     # returns a path and continues while loop 
                 else:
                     stack.append((next, path + [next]))
-                    print "Stack push", next, path+[next]
+                    #print "Stack push", next, path+[next]
         return
 
     ######################################################
@@ -79,10 +83,10 @@ class BFS(object):
         stack = [(start, [start])] # list of tuples
 
         while stack:
-            #print 'before pop, stack=', stack
+            ##print 'before pop, stack=', stack
             (vertex, path) = stack.pop(0)   # FIFO
-            #print 'after pop stack=', stack
-            print 'visiting node', vertex, 'path=', path
+            ##print 'after pop stack=', stack
+            #print 'visiting node', vertex, 'path=', path
             for next in self.graph[vertex] - set(path):
                 if next == goal:
                     yield path + [next]     # returns a path and cont while loop 
@@ -113,10 +117,10 @@ class BFS(object):
         while q:
             vertex = q.pop(0)   # FIFO queue
             if vertex not in visited:
-                print("visiting ", vertex)
+                #print("visiting ", vertex)
                 visited.add(vertex)
                 visited_order.append(vertex)
-                print ("---visited_order", visited_order)
+                #print ("---visited_order", visited_order)
                 q.extend(self.graph[vertex] - visited) # subtract only applies to set's            
         return visited_order
 
@@ -136,22 +140,22 @@ def main():
     graph = {'1-0': set(['0-0']), '0-0': set(['1-0', '0-1']), '0-1': set(['0-0'])}
 
     bfs = BFS(graph)
-    #print 'graph:', graph
+    ##print 'graph:', graph
 
     start_node = '0-0'
     end_node = '1-1'
 
     p = bfs.bfs_shortest_path(start_node, end_node)
-    print "\n++++++++++Shortest path from %s to %s: %s\n" % (start_node, end_node, p)
+    #print "\n++++++++++Shortest path from %s to %s: %s\n" % (start_node, end_node, p)
 
     # find all the paths returned by bfs_paths()
     # paths = list(bfs.bfs_paths(start_node, end_node)) # [['A', 'C', 'F'], ['A', 'B', 'E', 'F']]
-    # print "\n==========paths from %s to %s: %s\n" % (start_node, end_node, paths)
-    #print "\n----------shortest path: %s\n" % bfs.shortest(paths)
+    # #print "\n==========paths from %s to %s: %s\n" % (start_node, end_node, paths)
+    ##print "\n----------shortest path: %s\n" % bfs.shortest(paths)
 
     #order holds traverse order of the all the nodes
     order = bfs.bfs(start_node)
-    print "\n##########traverse order:", order
+    #print "\n##########traverse order:", order
 
     return
 

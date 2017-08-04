@@ -25,13 +25,13 @@ def mainForGraphFSM(gridSizeIn, obsIn, frameIn):
     gridSize = gridSizeIn
     obs = obsIn
     frame = frameIn
-    print type(gridSize)
+    #print type(gridSize)
     #gridSize = [4, 4]
-    print gridSize[0]
-    print gridSize[1]
+    #print gridSize[0]
+    #print gridSize[1]
 
 
-    print obs
+    #print obs
     
     #obs = "1,2"
 
@@ -41,9 +41,7 @@ def mainForGraphFSM(gridSizeIn, obsIn, frameIn):
         for j in range (gridSize[1]):
             for obstacle in obs:
                 if (i == int(obstacle[0]) and j == int(obstacle[1])):
-                    print "entering removal of stuff statement"
-                    print i
-                    print j
+                    #print "entering removal of stuff statement"
                     break
             else:
                 graph[str(i) + "," + str(j)] = set([str(i - 1) + "," + str(j), str(i + 1) + "," + str(j), str(i) + "," + str(j - 1), str(i) + "," + str(j + 1),])
@@ -58,19 +56,17 @@ def mainForGraphFSM(gridSizeIn, obsIn, frameIn):
                     graph[str(i) + "," + str(j)].remove(str(i) + "," + str(j + 1)) 
             
     for obstacle in obs:
-        print "in loop for removal of nodes"
         for node in graph:
-            print "in inner loop"
-            #print graph[node]
+            ##print graph[node]
             for connections in graph[node]:
                 if (obstacle[0] == int(connections[0]) and obstacle[1] == int(connections[2])):
                     graph[node].remove(connections)
                     break
 
-    print 'graph:', graph
+    #print 'graph:', graph
 
     start_node = '3,3'
-    end_node = '1,0'
+    end_node = '1,1'
     display = GraphDemo.SimpleGraphDisplay(frame, graph, start_node, end_node)
 
     bfs = bfsEngine.BFS(graph)
@@ -78,10 +74,10 @@ def mainForGraphFSM(gridSizeIn, obsIn, frameIn):
     print "shortest path", p
     display.highlight_path(p)
 
-    print gRobotList
-    print "!!!!!!!"
-    fsm = RobotBehavior.finiteStateMachine(p, graph, start_node, end_node, gRobotList)
+    #print gRobotList
+    fsm = RobotBehavior.finiteStateMachine(p, graph, start_node, end_node, gRobotList, display, bfs)
     fsm.executingFSM()
+    #print "SHABALABADINGDONG"
 
 def main(): 
 
@@ -90,7 +86,7 @@ def main():
 
     global gRobotList
     robotComm.start() #starts comm thread 
-    print "Bluetooth connected"
+    #print "Bluetooth connected"
     gRobotList = robotComm.robotList
 
     frame = tk.Tk()
@@ -103,17 +99,17 @@ def main():
 
     while not noObs:
         obsIn = input("Enter the location of obstacle in a coordinate fromat. Enter done if you are done putting in obstacles: ")
-        print str(obsIn)
-        print type(str(obsIn))
+        # #print str(obsIn)
+        # #print type(str(obsIn))
         if obsIn == "done":
             noObs = True
         else:
             obs.append(obsIn)
 
-    print "before init thread"
+    #print "before init thread"
     threadForGraphFsM = threading.Thread(target = mainForGraphFSM, args = (gridSize, obs, frame))
     threadForGraphFsM.start()
-    print "thread started"
+    #print "thread started"
 
     frame.mainloop() 
 
